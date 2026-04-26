@@ -4,26 +4,8 @@ import argparse
 from stuff.litegapps import LiteGapps
 from stuff.houdini import Houdini
 from stuff.houdini_hack import Houdini_Hack
-from stuff.ndk_translation import NdkTranslation
 import tools.helper as helper
 import subprocess
-import platform
-
-
-def is_amd_processor():
-    """Detect if running on AMD processor"""
-    try:
-        with open('/proc/cpuinfo', 'r') as f:
-            cpuinfo = f.read().lower()
-            # Check for AMD vendor ID
-            if 'authenticamd' in cpuinfo or 'vendor_id.*amd' in cpuinfo:
-                return True
-            # Check for AMD-specific CPU flags
-            if 'svm' in cpuinfo and 'vendor_id' in cpuinfo and 'amd' in cpuinfo:
-                return True
-    except:
-        pass
-    return False
 
 
 def main():
@@ -42,7 +24,7 @@ def main():
                         action='store_true')
     parser.add_argument('-i', '--install-houdini',
                         dest='houdini',
-                        help='Install houdini or ndk_translation files (auto-detects AMD)',
+                        help='Install houdini files',
                         action='store_true')
     parser.add_argument('-c', '--container', 
                         dest='container',
@@ -62,22 +44,10 @@ def main():
     if args.houdini:
         arch = helper.host()[0]
         if arch == "x86" or arch == "x86_64":
-            # Auto-detect AMD and use NDK Translation instead of Houdini
-            if is_amd_processor():
-                print("\n" + "="*60)
-                print("AMD processor detected - using NDK Translation")
-                print("="*60)
-                NdkTranslation().install()
-                dockerfile = dockerfile + "COPY ndk_translation /\n"
-                tags.append("ndk_translation")
-            else:
-                print("\n" + "="*60)
-                print("Intel processor detected - using Houdini")
-                print("="*60)
-                Houdini(args.android).install()
-                Houdini_Hack(args.android).install()
-                dockerfile = dockerfile + "COPY houdini /\n"
-                tags.append("houdini")
+            Houdini(args.android).install()
+            Houdini_Hack(args.android).install()
+            dockerfile = dockerfile+"COPY houdini /\n"
+            tags.append("houdini")
     print("\nDockerfile\n"+dockerfile)
     with open("./Dockerfile", "w") as f:
         f.write(dockerfile)
